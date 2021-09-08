@@ -1,0 +1,44 @@
+version: '3'
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: escola_ingles
+    ports:
+      - 3306
+    volumes:
+      - ./mysql_data.sql:/mysql_data.sql
+    networks: 
+      - nginx_network
+
+  app:
+    build: .
+    volumes: 
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports: 
+      - 3000
+    depends_on: 
+      - db
+    command: bash -c "npx sequelize-cli db:migrate && npm start" 
+    networks:
+      - nginx_network
+
+  nginx:
+    image: nginx:1.13
+    ports:
+      - 80:80
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/logs/:/var/log/nginx/
+    depends_on:  
+      - app        
+      - db
+    networks:
+      - nginx_network
+
+networks: 
+  nginx_network:
+      driver: bridge
